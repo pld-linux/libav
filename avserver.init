@@ -1,0 +1,93 @@
+#!/bin/sh
+#
+# avserver	FFserver video server
+#
+# chkconfig:	345 40 60
+#
+# description:	FFserver video server
+#
+# $Id$
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+# Get service config - may override defaults
+[ -f /etc/sysconfig/avserver ] && . /etc/sysconfig/avserver
+
+# Check that networking is up.
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status ]; then
+		msg_network_down avserver
+		exit 1
+	fi
+else
+	exit 0
+fi
+
+start() {
+	# Check if the service is already running?
+	if [ -f /var/lock/subsys/avserver ]; then
+		msg_already_running avserver
+		return
+	fi
+
+	msg_starting avserver
+	daemon --user ffserver /usr/sbin/avserver
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/avserver
+}
+
+stop() {
+	if [ ! -f /var/lock/subsys/avserver ]; then
+		msg_not_running avserver
+		return
+	fi
+
+	# Stop daemons.
+	msg_stopping avserver
+	killproc avserver
+	rm -f /var/lock/subsys/avserver
+}
+
+condrestart() {
+	if [ ! -f /var/lock/subsys/avserver ]; then
+		msg_not_running avserver
+		RETVAL=$1
+		return
+	fi
+
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  try-restart)
+	condrestart 0
+	;;
+  force-reload)
+	condrestart 7
+	;;
+  status)
+	status avserver
+	RETVAL=$?
+	;;
+  *)
+	msg_usage "$0 {start|stop|restart|try-restart|force-reload|status}"
+	exit 3
+esac
+
+exit $RETVAL
