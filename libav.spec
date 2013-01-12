@@ -1,3 +1,4 @@
+# TODO: avserver no longer supports daemon mode, so adjust init script
 # NOTE: don't send it to Th unless you resolve libraries (incl. sonames) conflict with ffmpeg
 # libav is a fork of ffmpeg; as of Dec 2012 they are not 100% compatible
 # (e.g. libav didn't drop some deprecated APIs); ffmpeg 1.0.x seems more powerful than libav 0.8.x.
@@ -10,7 +11,9 @@
 #
 # Conditional build:
 %bcond_with	nonfree		# non free options of package (currently: faac)
+%bcond_with	fdk_aac		# AAC encoding via libfdk_aac (requires nonfree)
 %bcond_without	frei0r		# frei0r video filtering
+%bcond_without	ilbc		# iLBC de/encoding via WebRTC libilbc
 %bcond_without	opencv		# OpenCV video filtering
 %bcond_without	pulseaudio	# PulseAudio input support
 %bcond_without	x264		# x264 encoder
@@ -21,15 +24,15 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	0.8.4
+Version:	9.1
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
-# (postprocessing, some filters, x264, xavs, xvid, x11grab)
+# (some filters, x264, xavs, xvid, x11grab)
 # using v3 allows Apache-licensed libs (opencore-amr, libvo-*enc)
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
 Source0:	http://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	4634b35dec327f9aba61b3b894df03f7
+# Source0-md5:	6c70d41a452762d16162f4d66120efbe
 Source1:	avserver.init
 Source2:	avserver.sysconfig
 Source3:	avserver.conf
@@ -37,11 +40,13 @@ Patch0:		%{name}-gsm.patch
 Patch1:		%{name}-opencv24.patch
 Patch2:		%{name}-openjpeg.patch
 Patch3:		%{name}-cdio-paranoia.patch
+Patch4:		%{name}-avserver.patch
 URL:		http://libav.org/
 BuildRequires:	SDL-devel >= 1.2.1
 BuildRequires:	alsa-lib-devel
 BuildRequires:	bzip2-devel
 %{?with_nonfree:BuildRequires:	faac-devel}
+%{?with_fdk_aac:BuildRequires:	fdk-aac-devel}
 BuildRequires:	freetype-devel
 %{?with_frei0r:BuildRequires:	frei0r-devel}
 %ifarch ppc
@@ -54,7 +59,6 @@ BuildRequires:	lame-libs-devel >= 3.98.3
 BuildRequires:	libcdio-paranoia-devel >= 0.90-2
 BuildRequires:	libdc1394-devel >= 2
 BuildRequires:	libgsm-devel
-BuildRequires:	libnut-devel
 BuildRequires:	libraw1394-devel >= 2
 BuildRequires:	librtmp-devel
 BuildRequires:	libtheora-devel >= 1.0-0.beta3
@@ -73,6 +77,7 @@ BuildRequires:	nasm
 BuildRequires:	opencore-amr-devel
 %{?with_opencv:BuildRequires:	opencv-devel}
 BuildRequires:	openjpeg-devel >= 1.5
+BuildRequires:	opus-devel
 BuildRequires:	perl-Encode
 BuildRequires:	perl-tools-pod
 BuildRequires:	pkgconfig
@@ -86,6 +91,7 @@ BuildRequires:	tar >= 1:1.22
 %{?with_doc:BuildRequires:	texinfo}
 BuildRequires:	vo-aacenc-devel
 BuildRequires:	vo-amrwbenc-devel
+%{?with_ilbc:BuildRequires:	webrtc-libilbc-devel}
 BuildRequires:	xavs-devel
 BuildRequires:	xorg-lib-libXext-devel
 BuildRequires:	xorg-lib-libXfixes-devel
@@ -93,8 +99,8 @@ BuildRequires:	xvid-devel >= 1:1.1.0
 BuildRequires:	xz
 BuildRequires:	yasm
 BuildRequires:	zlib-devel
+%{?with_ilbc:Requires:	webrtc-libilbc}
 Requires:	xvid >= 1:1.1.0
-Obsoletes:	libpostproc
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_noautoreqdep	libGL.so.1 libGLU.so.1
@@ -128,13 +134,13 @@ Requires:	SDL-devel >= 1.2.1
 Requires:	alsa-lib-devel
 Requires:	bzip2-devel
 %{?with_nonfree:Requires:	faac-devel}
+%{?with_fdk_aac:Requires:	fdk-aac-devel}
 Requires:	freetype-devel
 Requires:	jack-audio-connection-kit-devel
 Requires:	lame-libs-devel >= 3.98.3
 Requires:	libcdio-paranoia-devel >= 0.90-2
 Requires:	libdc1394-devel >= 2
 Requires:	libgsm-devel
-Requires:	libnut-devel
 Requires:	libraw1394-devel >= 2
 Requires:	librtmp-devel
 Requires:	libtheora-devel >= 1.0-0.beta3
@@ -145,16 +151,17 @@ Requires:	libvorbis-devel
 Requires:	opencore-amr-devel
 %{?with_opencv:Requires:	opencv-devel}
 Requires:	openjpeg-devel >= 1.5
+Requires:	opus-devel
 Requires:	schroedinger-devel
 Requires:	speex-devel >= 1:1.2-rc1
 Requires:	vo-aacenc-devel
 Requires:	vo-amrwbenc-devel
+%{?with_ilbc:Requires:	webrtc-libilbc}
 Requires:	xavs-devel
 Requires:	xorg-lib-libXext-devel
 Requires:	xorg-lib-libXfixes-devel
 Requires:	xvid-devel >= 1:1.1.0
 Requires:	zlib-devel
-Obsoletes:	libpostproc-devel
 
 %description devel
 libav header files.
@@ -230,6 +237,7 @@ dużej przestrzeni na dane skonfigurowanej w avserver.conf).
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 # package the grep result for mplayer, the result formatted as ./mplayer/configure
 cat <<EOF > libav-avconfig
@@ -288,7 +296,6 @@ EOF
 # notes:
 # - it's not autoconf configure
 # - --disable-debug, --disable-optimizations, tune=generic causes not to override our optflags
-# - dirac is not enabled (Dirac is supported via schroedinger, dropped in ffmpeg)
 # - openssl is not enabled (gnutls is instead)
 ./configure \
 	--arch=%{_target_base_arch} \
@@ -308,14 +315,16 @@ EOF
 	%{?with_frei0r:--enable-frei0r} \
 	--enable-libcdio \
 	--enable-libdc1394 \
+	%{?with_fdk_aac:--enable-libfdk-aac} \
 	--enable-libfreetype \
 	--enable-libgsm \
+	%{?with_ilbc:--enable-libilbc} \
 	--enable-libmp3lame \
-	--enable-libnut \
 	--enable-libopencore-amrnb \
 	--enable-libopencore-amrwb \
 	%{?with_opencv:--enable-libopencv} \
 	--enable-libopenjpeg \
+	--enable-libopus \
 	%{?with_pulseaudio:--enable-libpulse} \
 	--enable-librtmp \
 	--enable-libschroedinger \
@@ -328,7 +337,6 @@ EOF
 	%{?with_x264:--enable-libx264} \
 	--enable-libxavs \
 	--enable-libxvid \
-	--enable-postproc \
 	--enable-pthreads \
 	--enable-shared \
 	--enable-swscale \
@@ -346,9 +354,6 @@ EOF
 	--enable-libfaac \
 %endif
 	--enable-runtime-cpudetect
-
-# force oldscaler build
-%{__sed} -i -e 's|#define.*CONFIG_OLDSCALER.*0|#define CONFIG_OLDSCALER 1|g' config.h
 
 %{__make} \
 	V=1
@@ -420,17 +425,17 @@ fi
 %defattr(644,root,root,755)
 %doc CREDITS Changelog LICENSE README doc/{APIchanges,RELEASE_NOTES} %{?with_doc:doc/*.html}
 %attr(755,root,root) %{_libdir}/libavcodec.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.53
+%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.54
 %attr(755,root,root) %{_libdir}/libavdevice.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libavdevice.so.53
 %attr(755,root,root) %{_libdir}/libavfilter.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.2
+%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.3
 %attr(755,root,root) %{_libdir}/libavformat.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavformat.so.53
+%attr(755,root,root) %ghost %{_libdir}/libavformat.so.54
+%attr(755,root,root) %{_libdir}/libavresample.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libavresample.so.1
 %attr(755,root,root) %{_libdir}/libavutil.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavutil.so.51
-%attr(755,root,root) %{_libdir}/libpostproc.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libpostproc.so.52
+%attr(755,root,root) %ghost %{_libdir}/libavutil.so.52
 %attr(755,root,root) %{_libdir}/libswscale.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libswscale.so.2
 
@@ -442,23 +447,23 @@ fi
 %attr(755,root,root) %{_libdir}/libavdevice.so
 %attr(755,root,root) %{_libdir}/libavfilter.so
 %attr(755,root,root) %{_libdir}/libavformat.so
+%attr(755,root,root) %{_libdir}/libavresample.so
 %attr(755,root,root) %{_libdir}/libavutil.so
-%attr(755,root,root) %{_libdir}/libpostproc.so
 %attr(755,root,root) %{_libdir}/libswscale.so
 %{_includedir}/libav
 %{_includedir}/libavcodec
 %{_includedir}/libavdevice
 %{_includedir}/libavfilter
 %{_includedir}/libavformat
+%{_includedir}/libavresample
 %{_includedir}/libavutil
-%{_includedir}/libpostproc
 %{_includedir}/libswscale
 %{_pkgconfigdir}/libavcodec.pc
 %{_pkgconfigdir}/libavdevice.pc
 %{_pkgconfigdir}/libavfilter.pc
 %{_pkgconfigdir}/libavformat.pc
+%{_pkgconfigdir}/libavresample.pc
 %{_pkgconfigdir}/libavutil.pc
-%{_pkgconfigdir}/libpostproc.pc
 %{_pkgconfigdir}/libswscale.pc
 
 %files static
@@ -467,8 +472,8 @@ fi
 %{_libdir}/libavdevice.a
 %{_libdir}/libavfilter.a
 %{_libdir}/libavformat.a
+%{_libdir}/libavresample.a
 %{_libdir}/libavutil.a
-%{_libdir}/libpostproc.a
 %{_libdir}/libswscale.a
 
 %files tools
@@ -476,12 +481,10 @@ fi
 %attr(755,root,root) %{_bindir}/avconv
 %attr(755,root,root) %{_bindir}/avprobe
 %attr(755,root,root) %{_bindir}/avqt-faststart
-%attr(755,root,root) %{_bindir}/ffmpeg
 %dir %{_datadir}/avconv
 %{_datadir}/avconv/*.avpreset
 %{?with_doc:%{_mandir}/man1/avconv.1*}
 %{?with_doc:%{_mandir}/man1/avprobe.1*}
-%{?with_doc:%{_mandir}/man1/ffmpeg.1*}
 
 %files avplay
 %defattr(644,root,root,755)
