@@ -24,7 +24,7 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	9.11
+Version:	10
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
 # (some filters, x264, xavs, xvid, x11grab)
@@ -32,14 +32,12 @@ Release:	0.1
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
 Source0:	http://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	7052da92d5eda8934874300b314b7ae4
+# Source0-md5:	c38b5a66224ff21ad9869e1f3f6c1f0b
 Source1:	avserver.init
 Source2:	avserver.sysconfig
 Source3:	avserver.conf
-Patch0:		%{name}-gsm.patch
-Patch1:		%{name}-opencv24.patch
-Patch2:		%{name}-openjpeg.patch
-Patch3:		%{name}-avserver.patch
+Patch0:		%{name}-opencv24.patch
+Patch1:		%{name}-avserver.patch
 URL:		http://libav.org/
 BuildRequires:	SDL-devel >= 1.2.1
 BuildRequires:	alsa-lib-devel
@@ -234,8 +232,6 @@ dużej przestrzeni na dane skonfigurowanej w avserver.conf).
 %setup -q
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 
 # package the grep result for mplayer, the result formatted as ./mplayer/configure
 cat <<EOF > libav-avconfig
@@ -379,8 +375,6 @@ for a in libavutil/*/bswap.h; do
 done
 cp -a libavformat/riff.h $RPM_BUILD_ROOT%{_includedir}/libavformat
 cp -a libavformat/avio.h $RPM_BUILD_ROOT%{_includedir}/libavformat
-# for lim-omx ffmpeg components
-cp -a libavcodec/audioconvert.h $RPM_BUILD_ROOT%{_includedir}/libavcodec
 
 install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/avserver
 cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/avserver
@@ -392,6 +386,9 @@ install -p tools/qt-faststart $RPM_BUILD_ROOT%{_bindir}/avqt-faststart
 # libav-config and expecting --libs output from it which is not implemented
 # simple to do (by querying pkgconfig), but why?
 install -p libav-avconfig $RPM_BUILD_ROOT%{_bindir}/libav-avconfig
+
+# packaged as %doc
+%{__rm} $RPM_BUILD_ROOT%{_docdir}/libav/*.html
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -423,17 +420,17 @@ fi
 %defattr(644,root,root,755)
 %doc CREDITS Changelog LICENSE README doc/{APIchanges,RELEASE_NOTES} %{?with_doc:doc/*.html}
 %attr(755,root,root) %{_libdir}/libavcodec.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.54
+%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.55
 %attr(755,root,root) %{_libdir}/libavdevice.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavdevice.so.53
+%attr(755,root,root) %ghost %{_libdir}/libavdevice.so.54
 %attr(755,root,root) %{_libdir}/libavfilter.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.3
+%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.4
 %attr(755,root,root) %{_libdir}/libavformat.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavformat.so.54
+%attr(755,root,root) %ghost %{_libdir}/libavformat.so.55
 %attr(755,root,root) %{_libdir}/libavresample.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libavresample.so.1
 %attr(755,root,root) %{_libdir}/libavutil.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavutil.so.52
+%attr(755,root,root) %ghost %{_libdir}/libavutil.so.53
 %attr(755,root,root) %{_libdir}/libswscale.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libswscale.so.2
 
