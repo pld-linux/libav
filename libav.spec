@@ -11,7 +11,7 @@
 #
 # Conditional build:
 %bcond_with	nonfree		# non free options of package (currently: faac)
-%bcond_with	fdk_aac		# AAC encoding via libfdk_aac (requires nonfree)
+%bcond_with	fdk_aac		# AAC de/encoding via libfdk_aac (requires nonfree)
 %bcond_without	frei0r		# frei0r video filtering
 %bcond_without	ilbc		# iLBC de/encoding via WebRTC libilbc
 %bcond_without	opencv		# OpenCV video filtering
@@ -19,6 +19,8 @@
 %bcond_without	x264		# x264 encoder
 %bcond_without	va		# VAAPI (Video Acceleration API)
 %bcond_without	vpx		# VP8, a high-quality video codec
+%bcond_without	wavpack		# wavpack encoding support
+%bcond_without	webp		# WebP encoding support
 %bcond_without	doc		# don't build docs
 
 Summary:	libav - Open Source audio and video processing tools
@@ -63,7 +65,8 @@ BuildRequires:	libtool >= 2:1.4d-3
 %{?with_va:BuildRequires:	libva-devel >= 1.0.3}
 BuildRequires:	libvdpau-devel >= 0.2
 BuildRequires:	libvorbis-devel
-%{?with_vpx:BuildRequires:	libvpx-devel >= 0.9.1}
+%{?with_vpx:BuildRequires:	libvpx-devel >= 0.9.6}
+%{?with_webp:BuildRequires:	libwebp-devel}
 # X264_BUILD >= 118
 %{?with_x264:BuildRequires:	libx264-devel >= 0.1.3-1.20111212_2245}
 %ifarch %{ix86}
@@ -88,6 +91,7 @@ BuildRequires:	tar >= 1:1.22
 %{?with_doc:BuildRequires:	texinfo}
 BuildRequires:	vo-aacenc-devel
 BuildRequires:	vo-amrwbenc-devel
+%{?with_wavpack:BuildRequires:	wavpack-devel}
 %{?with_ilbc:BuildRequires:	webrtc-libilbc-devel}
 BuildRequires:	xavs-devel
 BuildRequires:	xorg-lib-libXext-devel
@@ -96,6 +100,7 @@ BuildRequires:	xvid-devel >= 1:1.1.0
 BuildRequires:	xz
 BuildRequires:	yasm
 BuildRequires:	zlib-devel
+%{?with_vpx:Requires:	libvpx >= 0.9.6}
 %{?with_ilbc:Requires:	webrtc-libilbc}
 Requires:	xvid >= 1:1.1.0
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -143,7 +148,8 @@ Requires:	librtmp-devel
 Requires:	libtheora-devel >= 1.0-0.beta3
 %{?with_va:Requires:	libva-devel >= 1.0.3}
 Requires:	libvorbis-devel
-%{?with_vpx:Requires:	libvpx-devel >= 0.9.1}
+%{?with_vpx:Requires:	libvpx-devel >= 0.9.6}
+%{?with_webp:Requires:	libwebp-devel}
 %{?with_x264:Requires:	libx264-devel >= 0.1.3-1.20110625_2245}
 Requires:	opencore-amr-devel
 %{?with_opencv:Requires:	opencv-devel}
@@ -153,6 +159,7 @@ Requires:	schroedinger-devel
 Requires:	speex-devel >= 1:1.2-rc1
 Requires:	vo-aacenc-devel
 Requires:	vo-amrwbenc-devel
+%{?with_wavpack:Requires:	wavpack-devel}
 %{?with_ilbc:Requires:	webrtc-libilbc}
 Requires:	xavs-devel
 Requires:	xorg-lib-libXext-devel
@@ -328,6 +335,8 @@ EOF
 	--enable-libvo-amrwbenc \
 	--enable-libvorbis \
 	%{?with_vpx:--enable-libvpx} \
+	%{?with_wavpack:--enable-libwavpack} \
+	%{?with_webp:--enable-libwebp} \
 	%{?with_x264:--enable-libx264} \
 	--enable-libxavs \
 	--enable-libxvid \
