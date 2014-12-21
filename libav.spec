@@ -33,7 +33,7 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	11
+Version:	11.1
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
 # (some filters, x264, x265, xavs, xvid, x11grab)
@@ -41,7 +41,7 @@ Release:	0.1
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
 Source0:	http://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	bfc894b3a2747212c2f48a38a468a15e
+# Source0-md5:	3ffd396d8c210dd7e2f487696371ab21
 Patch0:		%{name}-opencv24.patch
 URL:		http://libav.org/
 BuildRequires:	SDL-devel >= 1.2.1
