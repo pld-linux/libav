@@ -2,7 +2,7 @@
 # libav is a fork of ffmpeg; as of Dec 2012 they are not 100% compatible
 # (e.g. libav didn't drop some deprecated APIs); ffmpeg 1.0.x seems more powerful than libav 0.8.x.
 #
-# How to deal with ffmpeg/opencv checken-egg problem:
+# How to deal with ffmpeg/opencv chicken-egg problem:
 #	1. make-request -r --without opencv ffmpeg.spec
 #	2. make-request -r opencv.spec
 #	3. bump release of ffmpeg.spec
