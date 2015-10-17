@@ -33,7 +33,7 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	11.3
+Version:	11.4
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
 # (some filters, x264, x265, xavs, xvid, x11grab)
@@ -41,8 +41,9 @@ Release:	0.1
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
 Source0:	http://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	16f896b12458fe7a0d5150e44e0639ec
+# Source0-md5:	98c264530a3a5e569543f60b917c3daa
 Patch0:		%{name}-opencv24.patch
+Patch1:		%{name}-ilbc.patch
 URL:		http://libav.org/
 BuildRequires:	SDL-devel >= 1.2.1
 BuildRequires:	alsa-lib-devel
@@ -173,7 +174,7 @@ Requires:	twolame-devel
 Requires:	vo-aacenc-devel
 Requires:	vo-amrwbenc-devel
 %{?with_wavpack:Requires:	wavpack-devel}
-%{?with_ilbc:Requires:	webrtc-libilbc}
+%{?with_ilbc:Requires:	webrtc-libilbc-devel}
 Requires:	xavs-devel
 Requires:	xorg-lib-libXext-devel
 Requires:	xorg-lib-libXfixes-devel
@@ -230,6 +231,7 @@ testowania różnych API libav.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 # package the grep result for mplayer, the result formatted as ./mplayer/configure
 cat <<EOF > libav-avconfig
