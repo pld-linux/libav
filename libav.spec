@@ -12,10 +12,20 @@
 %bcond_with	nonfree		# non free options of package (currently: faac)
 %bcond_with	fdk_aac		# AAC de/encoding via libfdk_aac (requires nonfree)
 %bcond_without	bs2b		# BS2B audio filter support
+%bcond_with	cuda		# NVIDIA CUDA code [BR: cuda.h]
+%bcond_without	dcadec		# DCA decoding via libdcadec
 %bcond_without	frei0r		# frei0r video filtering
+%bcond_without	hdcd		# HDCD decoding filter
 %bcond_without	ilbc		# iLBC de/encoding via WebRTC libilbc
+%bcond_without	kvazaar		# Kvazaar HEVC encoder support
+%bcond_with	mfx		# MFX hardware acceleration support
+%bcond_with	npp		# NVIDIA Performance Primitives-based code (requires nonfree) [BR: libnppc+libnppi, npp.h]
+%bcond_with	nvenc		# NVIDIA NVENC support
+%bcond_without	omx		# OpenMAX IL support
+%bcond_with	openh264	# OpenH264 H.264 encoder
 %bcond_without	opencv		# OpenCV video filtering
 %bcond_without	pulseaudio	# PulseAudio input support
+%bcond_without	snappy		# Snappy compression support (needed for hap encoding)
 %bcond_without	x264		# x264 encoder
 %bcond_without	x265		# H.265/HEVC x265 encoder
 %bcond_without	va		# VAAPI (Video Acceleration API)
@@ -24,7 +34,7 @@
 %bcond_without	webp		# WebP encoding support
 %bcond_without	doc		# don't build docs
 
-%ifnarch %{ix86} %{x8664} arm
+%ifnarch %{ix86} %{x8664} %{arm}
 %undefine	with_x265
 %endif
 %ifarch i386 i486
@@ -33,21 +43,24 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	11.4
+Version:	12.2
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
 # (some filters, x264, x265, xavs, xvid, x11grab)
 # using v3 allows Apache-licensed libs (opencore-amr, libvo-*enc)
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
-Source0:	http://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	98c264530a3a5e569543f60b917c3daa
+Source0:	https://libav.org/releases/%{name}-%{version}.tar.xz
+# Source0-md5:	69b5d9de6e4b2fbf6956653f61c7ffe1
 Patch0:		%{name}-opencv24.patch
-Patch1:		%{name}-ilbc.patch
-URL:		http://libav.org/
+Patch1:		%{name}-omx-libnames.patch
+URL:		https://libav.org/
+# libomxil-bellagio-devel or limoi-core-devel (just headers, library is dlopened at runtime)
+%{?with_omx:BuildRequires:	OpenMAX-IL-devel}
 BuildRequires:	SDL-devel >= 1.2.1
 BuildRequires:	alsa-lib-devel
 BuildRequires:	bzip2-devel
+%{?with_dcadec:BuildRequires:	dcadec-devel >= 0.2.0}
 %{?with_nonfree:BuildRequires:	faac-devel}
 %{?with_fdk_aac:BuildRequires:	fdk-aac-devel}
 BuildRequires:	fontconfig-devel
@@ -59,11 +72,13 @@ BuildRequires:	gcc >= 5:3.3.2-3
 %endif
 BuildRequires:	gnutls-devel
 BuildRequires:	jack-audio-connection-kit-devel
+%{?with_kvazaar:BuildRequires:	kvazaar-devel >= 0.8.1}
 BuildRequires:	lame-libs-devel >= 3.98.3
 %{?with_bs2b:BuildRequires:	libbs2b-devel}
 BuildRequires:	libcdio-paranoia-devel >= 0.90-2
 BuildRequires:	libdc1394-devel >= 2
 BuildRequires:	libgsm-devel
+%{?with_hdcd:BuildRequires:	libhdcd-devel}
 BuildRequires:	libraw1394-devel >= 2
 BuildRequires:	librtmp-devel
 BuildRequires:	libtheora-devel >= 1.0-0.beta3
@@ -71,19 +86,24 @@ BuildRequires:	libtool >= 2:1.4d-3
 %{?with_va:BuildRequires:	libva-devel >= 1.0.3}
 BuildRequires:	libvdpau-devel >= 0.2
 BuildRequires:	libvorbis-devel
-%{?with_vpx:BuildRequires:	libvpx-devel >= 0.9.6}
+%{?with_vpx:BuildRequires:	libvpx-devel >= 1.3.0}
 %{?with_webp:BuildRequires:	libwebp-devel}
 # X264_BUILD >= 118
 %{?with_x264:BuildRequires:	libx264-devel >= 0.1.3-1.20111212_2245}
-# X265_BUILD >= 17
+# X265_BUILD >= 57
 %{?with_x265:BuildRequires:	libx265-devel >= 1.3}
+# libxcb xcb-shm xcb-xfixes xcb-shape
+BuildRequires:	libxcb-devel >= 1.4
+%{?with_mfx:BuildRequires:	mfx_dispatch-devel}
 %ifarch %{ix86}
 %ifnarch i386 i486
 BuildRequires:	nasm
 %endif
 %endif
+#%{?with_nvenc:BuildRequires:	NVIDIA-NVENC-API} compat/nvenc/nvEncodeAPI.h
 BuildRequires:	opencore-amr-devel
 %{?with_opencv:BuildRequires:	opencv-devel}
+%{?with_openh264:BuildRequires:	openh264-devel >= 1.3}
 BuildRequires:	openjpeg-devel >= 1.5
 BuildRequires:	opus-devel
 BuildRequires:	perl-Encode
@@ -92,6 +112,7 @@ BuildRequires:	pkgconfig
 %{?with_pulseaudio:BuildRequires:	pulseaudio-devel}
 BuildRequires:	rpmbuild(macros) >= 1.470
 BuildRequires:	schroedinger-devel
+%{?with_snappy:BuildRequires:	snappy-devel}
 BuildRequires:	speex-devel >= 1:1.2-rc1
 BuildRequires:	tar >= 1:1.22
 %{?with_doc:BuildRequires:	tetex}
@@ -109,7 +130,7 @@ BuildRequires:	xvid-devel >= 1:1.1.0
 BuildRequires:	xz
 BuildRequires:	yasm
 BuildRequires:	zlib-devel
-%{?with_vpx:Requires:	libvpx >= 0.9.6}
+%{?with_vpx:Requires:	libvpx >= 1.3.0}
 %{?with_ilbc:Requires:	webrtc-libilbc}
 Requires:	xvid >= 1:1.1.0
 Obsoletes:	libav-avserver
@@ -145,30 +166,36 @@ Requires:	%{name} = %{version}-%{release}
 Requires:	SDL-devel >= 1.2.1
 Requires:	alsa-lib-devel
 Requires:	bzip2-devel
+%{?with_dcadec:Requires:	dcadec-devel >= 0.2.0}
 %{?with_nonfree:Requires:	faac-devel}
 %{?with_fdk_aac:Requires:	fdk-aac-devel}
 Requires:	fontconfig-devel
 Requires:	freetype-devel
 Requires:	jack-audio-connection-kit-devel
+%{?with_kvazaar:Requires:	kvazaar-devel >= 0.8.1}
 Requires:	lame-libs-devel >= 3.98.3
 %{?with_bs2b:Requires:	libbs2b-devel}
 Requires:	libcdio-paranoia-devel >= 0.90-2
 Requires:	libdc1394-devel >= 2
 Requires:	libgsm-devel
+%{?with_hdcd:Requires:	libhdcd-devel}
 Requires:	libraw1394-devel >= 2
 Requires:	librtmp-devel
 Requires:	libtheora-devel >= 1.0-0.beta3
 %{?with_va:Requires:	libva-devel >= 1.0.3}
 Requires:	libvorbis-devel
-%{?with_vpx:Requires:	libvpx-devel >= 0.9.6}
+%{?with_vpx:Requires:	libvpx-devel >= 1.3.0}
 %{?with_webp:Requires:	libwebp-devel}
 %{?with_x264:Requires:	libx264-devel >= 0.1.3-1.20110625_2245}
 %{?with_x265:Requires:	libx265-devel >= 1.3}
+%{?with_mfx:Requires:	mfx_dispatch-devel}
 Requires:	opencore-amr-devel
+%{?with_openh264:Requires:	openh264-devel >= 1.3}
 %{?with_opencv:Requires:	opencv-devel}
 Requires:	openjpeg-devel >= 1.5
 Requires:	opus-devel
 Requires:	schroedinger-devel
+%{?with_snappy:Requires:	snappy-devel}
 Requires:	speex-devel >= 1:1.2-rc1
 Requires:	twolame-devel
 Requires:	vo-aacenc-devel
@@ -303,6 +330,7 @@ EOF
 	--disable-debug \
 	--disable-optimizations \
 	--enable-avfilter \
+	%{!?with_cuda:--disable-cuda} \
 	--enable-gnutls \
 	--enable-gpl \
 	--enable-version3 \
@@ -310,20 +338,25 @@ EOF
 	%{?with_bs2b:--enable-libbs2b} \
 	--enable-libcdio \
 	--enable-libdc1394 \
-	%{?with_fdk_aac:--enable-libfdk-aac} \
+	%{?with_dcadec:--enable-libdcadec} \
 	--enable-libfontconfig \
 	--enable-libfreetype \
 	--enable-libgsm \
+	%{?with_hdcd:--enable-libhdcd} \
 	%{?with_ilbc:--enable-libilbc} \
+	%{?with_kvazaar:--enable-libkvazaar} \
+	%{?with_mfx:--enable-libmfx} \
 	--enable-libmp3lame \
 	--enable-libopencore-amrnb \
 	--enable-libopencore-amrwb \
 	%{?with_opencv:--enable-libopencv} \
+	%{?with_openh264:--enable-libopenh264} \
 	--enable-libopenjpeg \
 	--enable-libopus \
 	%{?with_pulseaudio:--enable-libpulse} \
 	--enable-librtmp \
 	--enable-libschroedinger \
+	%{?with_snappy:--enable-libsnappy} \
 	--enable-libspeex \
 	--enable-libtheora \
 	--enable-libtwolame \
@@ -336,13 +369,15 @@ EOF
 	%{?with_x264:--enable-libx264} \
 	%{?with_x265:--enable-libx265} \
 	--enable-libxavs \
+	--enable-libxcb \
 	--enable-libxvid \
+	%{!?with_nvenc:--disable-nvenc} \
+	%{?with_omx:--enable-omx} \
 	--enable-pthreads \
 	--enable-shared \
 	--enable-swscale \
 	%{?with_va:--enable-vaapi} \
 	--enable-vdpau \
-	--enable-x11grab \
 %ifnarch %{ix86} %{x8664}
 	--disable-mmx \
 %endif
@@ -352,6 +387,8 @@ EOF
 %if %{with nonfree}
 	--enable-nonfree \
 	--enable-libfaac \
+	%{?with_fdk_aac:--enable-libfdk-aac} \
+	%{?with_npp:--enable-libnpp} \
 %endif
 	--enable-runtime-cpudetect
 
@@ -398,21 +435,21 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc CREDITS Changelog LICENSE README doc/{APIchanges,RELEASE_NOTES} %{?with_doc:doc/*.html}
+%doc CREDITS Changelog LICENSE README.md doc/{APIchanges,RELEASE_NOTES} %{?with_doc:doc/*.html}
 %attr(755,root,root) %{_libdir}/libavcodec.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.56
+%attr(755,root,root) %ghost %{_libdir}/libavcodec.so.57
 %attr(755,root,root) %{_libdir}/libavdevice.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavdevice.so.55
+%attr(755,root,root) %ghost %{_libdir}/libavdevice.so.56
 %attr(755,root,root) %{_libdir}/libavfilter.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.5
+%attr(755,root,root) %ghost %{_libdir}/libavfilter.so.6
 %attr(755,root,root) %{_libdir}/libavformat.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavformat.so.56
+%attr(755,root,root) %ghost %{_libdir}/libavformat.so.57
 %attr(755,root,root) %{_libdir}/libavresample.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavresample.so.2
+%attr(755,root,root) %ghost %{_libdir}/libavresample.so.3
 %attr(755,root,root) %{_libdir}/libavutil.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libavutil.so.54
+%attr(755,root,root) %ghost %{_libdir}/libavutil.so.55
 %attr(755,root,root) %{_libdir}/libswscale.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libswscale.so.3
+%attr(755,root,root) %ghost %{_libdir}/libswscale.so.4
 
 %files devel
 %defattr(644,root,root,755)

@@ -1,11 +1,11 @@
---- libav-11/configure.orig	2014-09-17 17:19:14.132927699 +0200
-+++ libav-11/configure	2014-09-17 17:21:06.126256333 +0200
-@@ -4150,7 +4150,7 @@
- enabled libmp3lame        && require "libmp3lame >= 3.98.3" lame/lame.h lame_set_VBR_quality -lmp3lame
+--- libav-12.2/configure.orig	2017-11-17 20:29:43.109333176 +0100
++++ libav-12.2/configure	2017-11-17 20:31:41.592665154 +0100
+@@ -4625,7 +4625,7 @@
+ enabled libnpp            && require libnpp npp.h nppGetLibVersion -lnppi -lnppc
  enabled libopencore_amrnb && require libopencore_amrnb opencore-amrnb/interf_dec.h Decoder_Interface_init -lopencore-amrnb
  enabled libopencore_amrwb && require libopencore_amrwb opencore-amrwb/dec_if.h D_IF_init -lopencore-amrwb
 -enabled libopencv         && require_pkg_config opencv opencv/cv.h cvCreateImageHeader
 +enabled libopencv         && add_extralibs -lopencv_core -lopencv_features2d -lopencv_imgproc -lopencv_objdetect
+ enabled libopenh264       && require_pkg_config openh264 wels/codec_api.h WelsGetCodecVersion
  enabled libopenjpeg       && { { check_header openjpeg.h && check_lib2 openjpeg.h opj_version -lopenjpeg -DOPJ_STATIC; } ||
                                 { require_pkg_config libopenjpeg1 openjpeg.h opj_version -DOPJ_STATIC; } }
- enabled libopus           && require_pkg_config opus opus_multistream.h opus_multistream_decoder_create
