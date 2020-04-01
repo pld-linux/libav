@@ -29,7 +29,7 @@
 %bcond_without	x264		# x264 encoder
 %bcond_without	x265		# H.265/HEVC x265 encoder
 %bcond_without	va		# VAAPI (Video Acceleration API)
-%bcond_without	vpx		# VP8, a high-quality video codec
+%bcond_with	vpx		# VP8, a high-quality video codec [not ready for 1.4+?]
 %bcond_without	wavpack		# wavpack encoding support
 %bcond_without	webp		# WebP encoding support
 %bcond_without	doc		# don't build docs
@@ -43,7 +43,7 @@
 Summary:	libav - Open Source audio and video processing tools
 Summary(pl.UTF-8):	libav - narzędzia do przetwarzania dźwięku i obrazu o otwartych źródłach
 Name:		libav
-Version:	12.2
+Version:	12.3
 Release:	0.1
 # LGPL or GPL, chosen at configure time (GPL version is more featured)
 # (some filters, x264, x265, xavs, xvid, x11grab)
@@ -51,9 +51,10 @@ Release:	0.1
 License:	GPL v3+ with LGPL v3+ parts
 Group:		Libraries
 Source0:	https://libav.org/releases/%{name}-%{version}.tar.xz
-# Source0-md5:	69b5d9de6e4b2fbf6956653f61c7ffe1
+# Source0-md5:	753ec26481b0582eb737383bd8a350a5
 Patch0:		%{name}-opencv24.patch
 Patch1:		%{name}-omx-libnames.patch
+Patch2:		%{name}-x264.patch
 URL:		https://libav.org/
 # libomxil-bellagio-devel or limoi-core-devel (just headers, library is dlopened at runtime)
 %{?with_omx:BuildRequires:	OpenMAX-IL-devel}
@@ -259,6 +260,7 @@ testowania różnych API libav.
 %setup -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 # package the grep result for mplayer, the result formatted as ./mplayer/configure
 cat <<EOF > libav-avconfig
